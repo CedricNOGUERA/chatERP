@@ -1134,7 +1134,7 @@ File: Main Css File
 [data-layout=vertical][data-sidebar-size=sm] .navbar-menu .simplebar-mask,
 [data-layout=vertical][data-sidebar-size=sm] .navbar-menu .simplebar-content-wrapper {
   overflow: visible !important;
-}
+} 
 [data-layout=vertical][data-sidebar-size=sm] .navbar-menu .simplebar-scrollbar,
 [data-layout=vertical][data-sidebar-size=sm] .navbar-menu .vertical-menu-btn {
   display: none !important;

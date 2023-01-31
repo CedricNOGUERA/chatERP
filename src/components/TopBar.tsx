@@ -42,9 +42,9 @@ const TopBar = () => {
   
   const filtre = unique?.map((friend: any) => userData?.filter((user: any) => user.id === friend))
 
-  console.log(pendingFriend)
-  console.log(unique)
-  console.log(filtre)
+  // console.log(pendingFriend)
+  // console.log(unique)
+  // console.log(filtre)
 
 
 

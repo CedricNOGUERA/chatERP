@@ -11,27 +11,27 @@
 .user-chat {
   width: calc(100% - 300px);
 }
-/* @media (min-width: 1024.1px){
+@media (min-width: 1024.1px){
 [data-layout=horizontal] .chat-leftsidebar {
   height: 99vh;
 }
-} */
+}
 [data-layout=horizontal] .chat-leftsidebar {
   height: 99vh;
 }
 
 
-[data-layout=horizontal] .chat-conversation {
+/* [data-layout=horizontal] .chat-conversation {
   height: calc(83vh);
-}
+} */
 
 .convers{
   height: 81.5vh;
 }
-@media (max-width: 1650px){
+@media (max-width: 1051px){
 
 .convers {
-    height: 76.5vh;
+  height: 81.5vh;
 }
 }
 

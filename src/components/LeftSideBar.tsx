@@ -37,6 +37,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
   const [friendAreas, setFriendAreas] = React.useState<any>([]);
   const [inviteData, setInviteData] = React.useState<any>([]);
   const [inviteData2, setInviteData2] = React.useState<any>([]);
+  const [group, setGroup] = React.useState<any>([]);
 
   ///Group state
   const [userChecked, setUserChecked] = React.useState<any>();
@@ -45,7 +46,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
   
 //***********************************************************
-// ajouter un contact*/
+//Modal ajouter un contact*/
   const [showContact, setShowContact] = React.useState<boolean>(false);
   const handleCloseContact = () => {
     setShowContact(false);
@@ -56,7 +57,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
   const handleShowContact = () => setShowContact(true);
 
 //****************************************************
-// demande d'ami*/
+//Modal demande d'ami*/
   const [show, setShow] = React.useState<boolean>(false);
 
   const handleClose = () => setShow(false);
@@ -78,7 +79,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
 
   //****************************************************
-// Confirmation de demande d'ami*/
+//Modal Confirmation de demande d'ami*/
   const [showDecision, setShowDecision] = React.useState<boolean>(false);
 
   const handleCloseDecision = () => setShowDecision(false);
@@ -129,6 +130,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
     _getUserData(setAllUser);
     // _getChatId(setMsgId)
     _getAllFriendAreaData(setInviteData2)
+    getGroup()
     subscribeFriendArea()
   }, []);
   
@@ -431,7 +433,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
   setSelectedFriend([])
 
   }
-console.log(selectedFriend)
+// console.log(selectedFriend)
 
 
   const refuseFriend = () => {
@@ -440,39 +442,67 @@ console.log(selectedFriend)
 
   const memberGrp = (id: any) => {
 
-userGrp.push(id)
+    userGrp.push(id)
 
   }
 
 
-  const createGroup = async() => {
-const myUuid = uuidv4()
-    console.log(nameGrp)
-    console.log(userGrp)
+  const createGroup = async () => {
+    const myUuid = uuidv4();
+    console.log(nameGrp);
+    console.log(userGrp);
 
     const { data, error } = await supabase
+      .from("groupArea")
+      .insert([
+        {
+          group_name: nameGrp,
+          host_id: dataStore.id,
+          rooms: myUuid,
+          friends: userGrp,
+        },
+      ]);
+    if (error) {
+      console.log(error);
+    }
+
+    const { data: groupMessages, error: errors } = await supabase
+      .from("groupMessages")
+      .insert([
+        {
+          id: myUuid,
+          user_id: dataStore.id,
+          msg: [],
+          members: userGrp,
+        },
+      ]);
+    if (errors) {
+      console.log(errors);
+    }
+  };
+
+
+  const getGroup = async() => {
+    let { data: groupArea, error } = await supabase
   .from('groupArea')
-  .insert([
-    {  group_name: nameGrp, host_id: dataStore.id, rooms: myUuid, friends: userGrp },
-  ])
-  if(error){
-    console.log(error)
-  }
+  .select('*')
+  .eq('host_id', dataStore.id)
 
 
-  const { data: groupMessages, error: errors } = await supabase
-  .from('groupMessages')
-  .insert([{
-    id: myUuid,
-    user_id: dataStore.id,
-    msg: [],
-    members: userGrp  
- } ])
-if(errors){
-  console.log(errors)
-}
+  if(groupArea){
+    setGroup(groupArea)
 
   }
+
+  }
+  
+  console.log(group)
+  console.log(allUser)
+  const groupMembers = group[0]?.friends?.map((user: any) =>( 
+    allUser?.filter((filt: any) => filt.id == user )
+    // user
+  ))
+ 
 
 
   
@@ -585,7 +615,6 @@ if(errors){
               {filteredUsers?.friendArea &&
                 filteredUsers?.friendArea[0]?.rooms?.map((user: any) =>
                   user?.status === true ? (
-                 
                     <FriendsList
                       user={user}
                       getConversation={getConversation}
@@ -673,7 +702,7 @@ if(errors){
             <div className="d-flex align-items-center px-4 mt-4 pt-2 mb-2">
               <div className="flex-grow-1">
                 <h4 className="mb-0 fs-11 text-muted text-uppercase">
-                  Channels
+                  Groupes
                 </h4>
               </div>
               <div className="flex-shrink-0">
@@ -693,11 +722,58 @@ if(errors){
                 </div>
               </div>
             </div>
+
             <div className="chat-message-list">
               <ul
                 className="list-unstyled chat-list chat-user-list mb-0"
                 id="channelList"
-              ></ul>
+              >
+                {group &&
+                  group?.map((user: any) => (
+                    <li key={user.id_friend} className="py-2">
+                      <Row className="w-100 px-3 ">
+                        <Col xs={2}>
+                          <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
+                            <img
+                              src={user.avatar}
+                              className="rounded-circle avatar-xs"
+                              alt=""
+                            />
+                          </span>
+                        </Col>
+                        <Col className="m-auto">
+                          <Row className="">
+                            <Col>{user.group_name}</Col>
+                          </Row>
+                          <ul
+                            className="list-unstyled chat-list chat-user-list mb-0"
+                            id="channelList"
+                          >
+                            {groupMembers?.map((dude: any) => (
+                              <li className="mt-3">
+                                <Row>
+                                  <Col xs={2}>
+                                    <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
+                                      <img
+                                        src={dude[0]?.avatar}
+                                        className="rounded-circle avatar-xs"
+                                        alt=""
+                                      />
+                                    </span>
+                                  </Col>
+                                  <Col>
+                                  {dude[0]?.first_name} {' '}
+                                  {dude[0]?.last_name}
+                                  </Col>
+                                </Row>
+                              </li>
+                            ))}
+                          </ul>
+                        </Col>
+                      </Row>
+                    </li>
+                  ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -923,13 +999,11 @@ if(errors){
         friendRequest={friendRequest}
       />
 
-
-
-         {/*************************************** 
+      {/*************************************** 
         Acceptation/refus demande d'ami
         ***************************************/}
 
-<Modal
+      <Modal
         show={showDecision}
         onHide={handleCloseDecision}
         backdrop="static"
@@ -959,7 +1033,11 @@ if(errors){
           </ListGroup>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="danger" className="me-3" onClick={handleCloseDecision}>
+          <Button
+            variant="danger"
+            className="me-3"
+            onClick={handleCloseDecision}
+          >
             Annuler
           </Button>
           <Button
@@ -974,9 +1052,6 @@ if(errors){
         </Modal.Footer>
       </Modal>
 
-
-
-
       {/*************************************** 
         Modal de création de groupe
         ***************************************/}
@@ -986,71 +1061,78 @@ if(errors){
           <Modal.Title>Créez un groupe</Modal.Title>
         </Modal.Header>
         <Form onSubmit={createGroup}>
-        <Modal.Body>
-          <InputGroup className="mb-3">
-            <InputGroup.Text id="basic-addon1">Nom du groupe</InputGroup.Text>
-            <Form.Control
-            required
-              id="inputPassword5"
-              placeholder="groupe"
-              aria-label="group"
-              aria-describedby="group-name"
-              value={nameGrp}
-              onChange={(e) => setNameGrp(e.currentTarget.value)}
-             
-            />
-          </InputGroup>
-          <Accordion defaultActiveKey={["0"]} alwaysOpen>
-            <Accordion.Item eventKey="0">
-              <Accordion.Header>Choisissez un ami</Accordion.Header>
-              <Accordion.Body>
-                <ListGroup variant="flush">
-                  {filteredUsers?.friendArea &&
-                    filteredUsers?.friendArea[0]?.rooms?.map((user: any) =>
-                      user?.status === true ? (
-                        <ListGroup.Item
-                          key={user.id_friend}
-                          action
-                          variant="primary"
-                        >
-                          <Form.Check required type="checkbox" value={user.id_friend} onChange={(e) => memberGrp(e.currentTarget.value)} />
-                          <Row className="w-100 ps-3">
-                            <>
-                              <Col>
-                                <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
-                                  <img
-                                    src={user.avatar}
-                                    className="rounded-circle avatar-xs"
-                                    alt=""
-                                  />
-                                </span>
-                              </Col>
-                              <Col className="m-auto">
-                                {user.first_name} {user.last_name}
-                              </Col>
-                            </>
-                          </Row>
-                        </ListGroup.Item>
-                      ) : null
-                    )}
-                </ListGroup>
-              </Accordion.Body>
-            </Accordion.Item>
-          </Accordion>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => {
-            setUserGrp([])
-            setNameGrp("")
-            handleCloseGrp()}}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={createGroup}>
-            Créer votre groupe
-          </Button>
-        </Modal.Footer>
+          <Modal.Body>
+            <InputGroup className="mb-3">
+              <InputGroup.Text id="basic-addon1">Nom du groupe</InputGroup.Text>
+              <Form.Control
+                required
+                id="inputPassword5"
+                placeholder="groupe"
+                aria-label="group"
+                aria-describedby="group-name"
+                value={nameGrp}
+                onChange={(e) => setNameGrp(e.currentTarget.value)}
+              />
+            </InputGroup>
+            <Accordion defaultActiveKey={["0"]} alwaysOpen>
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>Choisissez un ami</Accordion.Header>
+                <Accordion.Body>
+                  <ListGroup variant="flush">
+                    {filteredUsers?.friendArea &&
+                      filteredUsers?.friendArea[0]?.rooms?.map((user: any) =>
+                        user?.status === true ? (
+                          <ListGroup.Item
+                            key={user.id_friend}
+                            action
+                            variant="primary"
+                          >
+                            <Form.Check
+                              required
+                              type="checkbox"
+                              value={user.id_friend}
+                              onChange={(e) => memberGrp(e.currentTarget.value)}
+                            />
+                            <Row className="w-100 ps-3">
+                              <>
+                                <Col>
+                                  <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
+                                    <img
+                                      src={user.avatar}
+                                      className="rounded-circle avatar-xs"
+                                      alt=""
+                                    />
+                                  </span>
+                                </Col>
+                                <Col className="m-auto">
+                                  {user.first_name} {user.last_name}
+                                </Col>
+                              </>
+                            </Row>
+                          </ListGroup.Item>
+                        ) : null
+                      )}
+                  </ListGroup>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setUserGrp([]);
+                setNameGrp("");
+                handleCloseGrp();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={createGroup}>
+              Créer votre groupe
+            </Button>
+          </Modal.Footer>
         </Form>
-
       </Modal>
     </div>
   );
