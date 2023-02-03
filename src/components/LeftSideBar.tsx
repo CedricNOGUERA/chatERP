@@ -26,6 +26,7 @@ import FriendsList from "./FriendsList";
 import FriendRequestModal from "./modal/FriendRequestModal";
 import FriendRequestValidation from "./modal/FriendRequestValidation";
 import { v4 as uuidv4 } from 'uuid';
+import { _getFriendRequest } from "../util/functionBis";
 
 const LeftSideBar = ({ setRoomId }: any) => {
 
@@ -38,6 +39,9 @@ const LeftSideBar = ({ setRoomId }: any) => {
   const [inviteData, setInviteData] = React.useState<any>([]);
   const [inviteData2, setInviteData2] = React.useState<any>([]);
   const [group, setGroup] = React.useState<any>([]);
+  const [frRequest, setFrRequest] = React.useState<any>([]);
+
+
 
   ///Group state
   const [userChecked, setUserChecked] = React.useState<any>();
@@ -85,6 +89,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
   const handleCloseDecision = () => setShowDecision(false);
   const handleShowDecision = (id: any) => {
     const choise = allUserExceptMe?.filter((user: any) => user.id === id)
+    _getFriendRequest(id, setFrRequest)
     setSelectedFriend(choise[0])
     setShowDecision(true)
   };
@@ -93,9 +98,8 @@ const LeftSideBar = ({ setRoomId }: any) => {
 // Modal groupe*/
   const [showGrp, setShowGrp] = React.useState<boolean>(false);
 
-  const handleCloseGrp = () => {
-    setShowGrp(false)};
-  const handleShowGrp = () => setShowGrp(true)
+  const handleCloseGrp = () => setShowGrp(false);
+  const handleShowGrp = () => setShowGrp(true);
 
 //*****************************************
 // Store state */
@@ -107,7 +111,6 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
 //************************
 // Form state */
-
   const [name, setName] = React.useState<string>("");
   const [lastname, setLastName] = React.useState<string>("");
   const [email, setEmail] = React.useState<string>("");
@@ -122,16 +125,18 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
 ///**************************************** */
 // useEffect
-
   React.useEffect(() => {
     _getUserDataExemptMe(setAllUserExceptMe, dataStore.id);
     _getFriendArea(setFriendAreas, dataStore.id);
     _getUserDataOnlyMe(setFilteredUsers, dataStore.id);
     _getUserData(setAllUser);
-    // _getChatId(setMsgId)
     _getAllFriendAreaData(setInviteData2)
+    _getFriendRequest(dataStore.id, setFrRequest)
     getGroup()
+
+
     subscribeFriendArea()
+    subscribeFrRequest()
   }, []);
   
   
@@ -147,11 +152,11 @@ const LeftSideBar = ({ setRoomId }: any) => {
   React.useEffect(() => {
     if(selectedFriend?.id) {
       _getFriendArea(setInviteData, selectedFriend?.id);
-      // _getUserDataOnlyMe(setInviteData, selectedFriend?.id);
     }
     _getUserDataOnlyMe(setFilteredUsers, dataStore.id);
     _getUserDataExemptMe(setAllUserExceptMe, dataStore.id);
     subscribeFriendArea()
+    subscribeFrRequest()
   }, [friendAreas]);
 
   
@@ -267,6 +272,15 @@ const LeftSideBar = ({ setRoomId }: any) => {
     }
 
       console.log("first");
+////FrRequest
+         const { data: dataz, error: errorz } = await supabase 
+      .from('frRequest')
+      .insert([{
+        asker_id: dataStore.id,
+        friends_list:[ friend.id]
+      }])
+
+      subscribeFrRequest()
       subscribeFriendArea()
     } 
     else {
@@ -295,11 +309,27 @@ const LeftSideBar = ({ setRoomId }: any) => {
         if(error){
           console.log(error)
         }
+
+///FrRequest
+
+        const newFriendsList = [...frRequest.friends_list, friend.id]
+      
+
+        const { data: dataz, error: errorz } = await supabase 
+      .from('frRequest')
+      .update({
+        friends_list: newFriendsList
+      })
+      .eq('asker_id', dataStore.id)
+
+
+        
     }
     console.log("already");
 
     if (!error) {
       subscribeFriendArea()
+      subscribeFrRequest()
 
     }
     
@@ -365,8 +395,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
     }
     subscribeFriendArea()
   };
-  
-
+ 
   const acceptFriend = async(id: any) => {
     
     
@@ -425,16 +454,25 @@ const LeftSideBar = ({ setRoomId }: any) => {
   if(error){
     console.log(error)
   }
-  
+
+
+  ///FrRequest
+
+  const newFrList = frRequest?.friends_list?.filter((id: any) => id !== dataStore.id)
+
+  const { data: dataz, error: errorz } = await supabase
+    .from('frRequest')
+    .update({ friends_list: newFrList })
+    .eq('asker_id', id)
 
   _updateChatStatus(`${askerData[0]?.room}`)
   _getUserDataOnlyMe(setFilteredUsers, dataStore.id);
 
   setSelectedFriend([])
-
+  subscribeFriendArea()
+  subscribeFrRequest()
   }
-// console.log(selectedFriend)
-
+  
 
   const refuseFriend = () => {
 
@@ -456,6 +494,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
       .from("groupArea")
       .insert([
         {
+          avatar: dataStore.avatar,
           group_name: nameGrp,
           host_id: dataStore.id,
           rooms: myUuid,
@@ -479,6 +518,8 @@ const LeftSideBar = ({ setRoomId }: any) => {
     if (errors) {
       console.log(errors);
     }
+
+    handleCloseGrp()
   };
 
 
@@ -496,10 +537,9 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
   }
   
-  console.log(group)
-  console.log(allUser)
+
   const groupMembers = group[0]?.friends?.map((user: any) =>( 
-    allUser?.filter((filt: any) => filt.id == user )
+    allUser?.filter((filt: any) => filt.id === user )
     // user
   ))
  
@@ -514,7 +554,8 @@ const LeftSideBar = ({ setRoomId }: any) => {
       (payload) => {
         console.log('Change received!', payload)
         _getUserDataOnlyMe(setFilteredUsers, dataStore.id)
-       
+        _getFriendArea(setFriendAreas, dataStore.id);
+        _getUserData(setAllUser);
     
       }
     )
@@ -524,18 +565,37 @@ const LeftSideBar = ({ setRoomId }: any) => {
       (payload) => {
         console.log('Change received!', payload)
         _getUserDataOnlyMe(setFilteredUsers, dataStore.id)
+        _getFriendArea(setFriendAreas, dataStore.id);
+_getUserData(setAllUser);
       }
     )
     .subscribe();
   }
 
+  async function subscribeFrRequest () {
+    const frRequest = supabase.channel('custom-all-channel')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'frRequest' },
+    (payload) => {
+      console.log('Change received!', payload)
+      _getFriendRequest(dataStore.id, setFrRequest)
+    }
+  )
+  .subscribe()
+  }
+
+
+  const stateConnexion = friendAreas?.friends?.map((user: any) => allUser?.filter((dude: any, indx: any) => dude.id === user) )
+
+  
 
   return (
     <div className="chat-leftsidebar">
-      <div className="px-4 pt-4 mb-4">
+      <div className="px-4 pt-2">
         <div className="d-flex align-items-start">
           <div className="flex-grow-1">
-            <h5 className="mb-4">Chats</h5>
+            <h4 className="mb-4 fw-bold text-secondary">Conversation</h4>
           </div>
           <div className="flex-shrink-0">
             <div
@@ -543,23 +603,17 @@ const LeftSideBar = ({ setRoomId }: any) => {
               data-bs-trigger="hover"
               data-bs-placement="bottom"
               title="Add Contact"
-            >
+              >
               <button type="button" className="btn btn-soft-success btn-sm">
                 <i className="ri-add-line align-bottom"></i>
               </button>
             </div>
           </div>
         </div>
-        <div className="search-box">
-          <input
-            type="text"
-            className="form-control bg-light border-light"
-            placeholder="Search here..."
-          />
-          <i className="ri-search-2-line search-icon"></i>
-        </div>
+       
       </div>
-      <ul
+              <hr className="text-secondary"/>
+      {/* <ul
         className="nav nav-tabs nav-tabs-custom nav-success nav-justified"
         role="tablist"
       >
@@ -573,17 +627,8 @@ const LeftSideBar = ({ setRoomId }: any) => {
             Chats
           </a>
         </li>
-        <li className="nav-item ">
-          <a
-            className="nav-link "
-            data-bs-toggle="tab"
-            href="#contacts"
-            role="tab"
-          >
-            Contact
-          </a>
-        </li>
-      </ul>
+        
+      </ul> */}
       <div className="tab-content text-muted">
         <div className="tab-pane active" id="chats" role="tabpanel">
           <div className="chat-room-list pt-3" data-simplebar>
@@ -613,13 +658,16 @@ const LeftSideBar = ({ setRoomId }: any) => {
 
             <ul className="list-unstyled">
               {filteredUsers?.friendArea &&
-                filteredUsers?.friendArea[0]?.rooms?.map((user: any) =>
+                filteredUsers?.friendArea[0]?.rooms?.map((user: any, indx: any) =>
                   user?.status === true ? (
-                    <FriendsList
+                      <FriendsList
+                      key={user?.id}
                       user={user}
+                      indx={indx}
+                      stateConnexion={stateConnexion}
                       getConversation={getConversation}
                       active={active}
-                    />
+                      />
                   ) : null
                 )}
             </ul>
@@ -733,13 +781,13 @@ const LeftSideBar = ({ setRoomId }: any) => {
                     <li key={user.id_friend} className="py-2">
                       <Row className="w-100 px-3 ">
                         <Col xs={2}>
-                          <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
+                          <div className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
                             <img
                               src={user.avatar}
                               className="rounded-circle avatar-xs"
                               alt=""
                             />
-                          </span>
+                          </div>
                         </Col>
                         <Col className="m-auto">
                           <Row className="">
@@ -969,7 +1017,6 @@ const LeftSideBar = ({ setRoomId }: any) => {
             <Button
               variant="primary"
               type="submit"
-              // <Button variant="primary" type="button" onClick={addContact}
               disabled={pass2.length > 4 && pass !== pass2 ? true : false}
             >
               Valider
@@ -987,6 +1034,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
         handleClose={handleClose}
         handleShow2={handleShow2}
         allUserExceptMe={allUserExceptMe}
+        setAllUserExceptMe={setAllUserExceptMe}
       />
 
       {/*************************************** 
@@ -1044,6 +1092,7 @@ const LeftSideBar = ({ setRoomId }: any) => {
             variant="success"
             onClick={() => {
               acceptFriend(selectedFriend.id);
+              _getFriendRequest(selectedFriend.id, setFrRequest)
               handleCloseDecision();
             }}
           >

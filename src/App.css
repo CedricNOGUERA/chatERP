@@ -11,28 +11,46 @@
 .user-chat {
   width: calc(100% - 300px);
 }
-@media (min-width: 1024.1px){
+
+
 [data-layout=horizontal] .chat-leftsidebar {
   height: 99vh;
 }
-}
+@media (max-width: 1024.1px){
 [data-layout=horizontal] .chat-leftsidebar {
   height: 99vh;
+}
 }
 
 
 /* [data-layout=horizontal] .chat-conversation {
-  height: calc(83vh);
+  height: 78vh;
 } */
 
 .convers{
-  height: 81.5vh;
+  height: 81vh;
 }
-@media (max-width: 1051px){
 
-.convers {
-  height: 81.5vh;
+
+@media (min-width: 1025px) and (max-width: 1350px){
+
+  .convers {
+    /* height: 81vh; */
+    height: 78vh;
+  }
+
+  [data-layout=horizontal] .chat-conversation {
+    height: 100%;
+  }
+
 }
+
+
+
+.badge-connexion{
+  position: absolute;
+  bottom: -22px;
+  left: 29px; 
 }
 
 

@@ -7,6 +7,21 @@ export const _getDateLocal = (dateToFormat: any) => {
 
 
 
+export const _updateUserStatus = async (id: any, status: any, badge: any) => {
+  const { data, error } = await supabase
+    .from("users")
+    .update({ status: status, badge_status: badge })
+    .eq("id", id);
+
+  if(!error){
+    console.log('Status modifié')
+  }
+
+
+  }
+
+
+
 
   
   
@@ -107,7 +122,6 @@ export const _getDateLocal = (dateToFormat: any) => {
       setData(friendArea);
     } else {
       console.log(error);
-      console.log("error");
       setData(false)
 
     }

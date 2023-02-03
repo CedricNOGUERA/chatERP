@@ -4,16 +4,16 @@ import useAuthStore from '../../store/userAuthStore';
 import { _getFriendRequest } from '../../util/functionBis';
 import { supabase } from '../../util/supabaseClient';
 
-const FriendRequestValidation = ({show2, handleClose2, selectedFriend, frInvite, invite
+const FriendRequestValidationCopy = ({show2, handleClose2, selectedFriend, frInvite, invite
   , friendRequest
 }: any) => {
   
   const [frRequest, setFrRequest] = React.useState<any>([]);
 
 
-  // console.log(frInvite.askers_list)
-  // console.log(invite.askers_list)
-  // console.log(frRequest.friends_list)
+  console.log(frInvite.askers_list)
+  console.log(invite.askers_list)
+  console.log(frRequest.friends_list)
 
   const dataStore = useAuthStore((state: any) => state)
 
@@ -133,4 +133,4 @@ const FriendRequestValidation = ({show2, handleClose2, selectedFriend, frInvite,
   )
 }
 
-export default FriendRequestValidation
+export default FriendRequestValidationCopy

@@ -1,8 +1,10 @@
 import React from "react";
 import { Badge, Col, Container, Row } from "react-bootstrap";
 import useAuthStore from "../store/userAuthStore";
-import { _getChatData, _getInvitedUserData, _getUserData, _getUserDataOnlyMe } from "../util/function";
+import { _getChatData, _getFriendArea, _getInvitedUserData, _getUserData, _getUserDataOnlyMe } from "../util/function";
+import { _getFriendRequest } from "../util/functionBis";
 import { supabase } from "../util/supabaseClient";
+import Avatar from "./Avatar";
 
 const TopBar = () => {
   const [userData, setUserData] = React.useState<any>([]);
@@ -11,26 +13,56 @@ const TopBar = () => {
   const [inviteDataz, setInviteDataz] = React.useState<any>([]);
   const [unique, setUnique] = React.useState<any>([]);
   const [pendingFriend, setPendingFriend] = React.useState<any>([]);
+  const [friendData, setFriendData] = React.useState<any>([]);
+  const [frRequest, setFrRequest] = React.useState<any>([]);
+  const [pendingAskes, setPendingAskes] = React.useState<any>([]);
+
+
+
+
   const authId = useAuthStore((state: any) => state.id)
 
   const dataStore = useAuthStore((state: any) => state)
+
+
+  const members =  friendData?.rooms?.filter((user: any) => user?.status === true)
+
+  const filtre = unique?.map((friend: any) => userData?.filter((user: any) => user.id === friend))
+
+console.log(pendingAskes)
+
   
   React.useEffect(() => {
     _getUserDataOnlyMe(setMyData, authId)
     _getChatData(setPendingFriend, dataStore.id)
     _getUserData(setUserData)
+    _getFriendArea(setFriendData, dataStore.id)
+    _getFriendRequest(dataStore.id, setFrRequest)
     subscribeChatMessages()
+    subscribeFrRequest()
   }, []);
+  
+
+
+  React.useEffect(() => {
+    setPendingAskes(
+      frRequest?.friends_list?.map((user: any) =>
+        userData?.filter((dude: any, indx: any) => dude.id === user)
+      )
+    );
+  }, [frRequest]);
+  
+  
   
   React.useEffect(() => {
     const tab = pendingFriend?.map((friend: any) => {
-      
-      // _getInvitedUserData(setInviteData, friend?.friend_id)
       inviteDataz.push(friend?.friend_id)
-      
     })
+    
     subscribeChatMessages()
   }, [pendingFriend]);
+
+
 
   React.useEffect(() => {
     
@@ -38,13 +70,6 @@ const TopBar = () => {
     subscribeChatMessages()
   }, [pendingFriend, myData]);
   
-
-  
-  const filtre = unique?.map((friend: any) => userData?.filter((user: any) => user.id === friend))
-
-  // console.log(pendingFriend)
-  // console.log(unique)
-  // console.log(filtre)
 
 
 
@@ -56,13 +81,38 @@ const TopBar = () => {
     (payload) => {
       console.log('Change received!', payload)
       _getUserData(setUserData)
-      setUnique([...new Set(inviteDataz)])
+
+    }
+  )
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'friendArea' },
+    (payload) => {
+      console.log('Change received!', payload)
+      _getUserData(setUserData)
+      _getFriendArea(setFriendData, dataStore.id)
+      _getFriendRequest(dataStore.id, setFrRequest)
+
 
     }
   )
   .subscribe()
 }
 
+async function subscribeFrRequest () {
+  const frRequest = supabase.channel('custom-all-channel')
+.on(
+  'postgres_changes',
+  { event: '*', schema: 'public', table: 'frRequest' },
+  (payload) => {
+    console.log('Change received!', payload)
+    _getFriendRequest(dataStore.id, setFrRequest)
+  }
+)
+.subscribe()
+}
+
+console.log(members)
   return (
     <div className="p-3 user-chat-topbar">
       <div className="row align-items-center ">
@@ -73,13 +123,11 @@ const TopBar = () => {
             </div>
             <div className="flex-grow-1 overflow-hidden">
               <div className="d-flex align-items-center">
-                <div className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
-                  <img
-                    src={dataStore.avatar}
-                    className="rounded-circle avatar-xs"
-                    alt=""
-                  />
-                </div>
+                  <Avatar
+                    avatar={dataStore.avatar}
+                    badge={myData?.badge_status}
+                    statusUser={myData?.status}
+                    />
                 <div className="flex-grow-1 overflow-hidden text-start">
                   <h5 className="text-truncate mb-0 fs-16">
                     <a
@@ -92,7 +140,10 @@ const TopBar = () => {
                     </a>
                   </h5>
                   <p className="text-truncate text-muted fs-14 mb-0 userStatus">
-                    <small>24 Members</small>
+                    <small>
+                      {members === undefined ? 'aucun' : members?.length}{" "}
+                      {members?.length > 1 ? "membres" : "membre"}
+                    </small>
                   </p>
                 </div>
               </div>
@@ -101,43 +152,56 @@ const TopBar = () => {
         </div>
         <div className="col-sm-6 col-4">
           <ul className="list-inline user-chat-nav text-end mb-0">
-            <li className="list-inline-item m-0">
-              <div className="dropdown">
-                <button
-                  className="btn btn-ghost-secondary btn-icon"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  <i className="ri-user-shared-2-line fs-4 text-primary"></i>{
-                    filtre && filtre.length > 0 &&
-                    <Badge bg="danger" pill>{filtre.length}</Badge>
-                  } 
-                </button>
-                <Container className="dropdown-menu dropdown-menu-end" style={{width:'250px'}}>
-                  <h6 className="px-2 text-primary">Demande en attente</h6>
-                  {filtre &&
-                    filtre?.map((user: any) => (
-                      <Row key={user[0]?.id} className="pending-friends m-0 py-2" >
-                        <Col xs={2} className="">
-                          <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
-                            <img
-                              src={user[0]?.avatar}
-                              className="rounded-circle avatar-xs"
-                              alt=""
-                            /> 
-                          </span>
-                        </Col>
-                        <Col className="m-auto">
-                          {user[0]?.first_name} {user[0]?.last_name} {' '}
-                          {user[0]?.status === true ? "💘" : <i className="ri-question-line text-info"></i>}
-                        </Col>
-                      </Row>
-                    ))}
-                </Container>
-              </div>
-            </li>
+            {pendingAskes && pendingAskes.length > 0 && (
+              <li className="list-inline-item m-0">
+                <div className="dropdown">
+                  <button
+                    className="btn btn-ghost-secondary btn-icon"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
+                    <i className="ri-user-shared-2-line fs-4 text-primary"></i>
+
+                    <Badge bg="danger" pill>
+                      {pendingAskes.length}
+                    </Badge>
+                  </button>
+                  <Container
+                    className="dropdown-menu dropdown-menu-end"
+                    style={{ width: "250px" }}
+                  >
+                    <h6 className="px-2 text-primary">Demande en attente</h6>
+                    {pendingAskes &&
+                      pendingAskes?.map((user: any) => (
+                        <Row
+                          key={user[0]?.id}
+                          className="pending-friends m-0 py-2"
+                        >
+                          <Col xs={2} className="">
+                            <span className="flex-shrink-0 chat-user-img online user-own-img align-self-center me-3 ms-0">
+                              <img
+                                src={user[0]?.avatar}
+                                className="rounded-circle avatar-xs"
+                                alt=""
+                              />
+                            </span>
+                          </Col>
+                          <Col className="m-auto">
+                            {user[0]?.first_name} {user[0]?.last_name}{" "}
+                            {user[0]?.status === true ? (
+                              "💘"
+                            ) : (
+                              <i className="ri-question-line text-info"></i>
+                            )}
+                          </Col>
+                        </Row>
+                      ))}
+                  </Container>
+                </div>
+              </li>
+            )}
             <li className="list-inline-item m-0">
               <div className="dropdown">
                 <button
@@ -170,7 +234,6 @@ const TopBar = () => {
                         type="text"
                         className="form-control bg-light border-light"
                         placeholder="Search here..."
-                        // onkeyup="searchMessages()"
                         id="searchMessage"
                       />
                     </div>

@@ -1,9 +1,10 @@
-import React from 'react'
-import useAuthStore from '../../store/userAuthStore'
+import React from "react";
+import useAuthStore from "../../store/userAuthStore";
+import { _updateUserStatus } from "../../util/function";
 
-const ProfileOffcanvas = ({meData}: any) => {
-
-  const authLogout = useAuthStore((state: any) => state.authLogout)
+const ProfileOffcanvas = ({ meData }: any) => {
+  const authLogout = useAuthStore((state: any) => state.authLogout);
+  const dataStore = useAuthStore((state: any) => state);
 
   return (
     <div
@@ -64,7 +65,16 @@ const ProfileOffcanvas = ({meData}: any) => {
                           Muted
                         </a>
                       </li>
-                      <li onClick={authLogout}>
+                      <li
+                        onClick={() => {
+                          _updateUserStatus(
+                            dataStore.id,
+                            "déconnecté",
+                            "ri-close-circle-fill"
+                          );
+                          authLogout();
+                        }}
+                      >
                         <a className="dropdown-item" href="/">
                           <i className="ri-logout-box-r-line align-bottom text-muted me-2"></i>
                           Log out
@@ -159,7 +169,16 @@ const ProfileOffcanvas = ({meData}: any) => {
                     Muted
                   </a>
                 </li>
-                <li onClick={authLogout}>
+                <li
+                  onClick={() => {
+                    _updateUserStatus(
+                      dataStore.id,
+                      "déconnecté",
+                      "ri-close-circle-fill"
+                    );
+                    authLogout();
+                  }}
+                >
                   <a className="dropdown-item" href="/">
                     <i className="ri-logout-box-r-line align-bottom text-muted me-2"></i>
                     Log out
@@ -447,6 +466,6 @@ const ProfileOffcanvas = ({meData}: any) => {
       </div>
     </div>
   );
-}
+};
 
-export default ProfileOffcanvas
+export default ProfileOffcanvas;

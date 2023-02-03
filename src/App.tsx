@@ -8,32 +8,22 @@ import { _getDateLocal } from "./util/function";
 import AuthForm from "./components/AuthForm";
 import { supabase } from "./util/supabaseClient";
 import useAuthStore from "./store/userAuthStore";
-import { useForm } from "react-hook-form";
 import PendingFriends from "./components/offCanvas/PendingFriends";
-import LeftSideBar2 from "./components/LeftSideBar2";
 
 
 
 function App() {
 
   const [roomId, setRoomId] = React.useState<any>("");
-
   const [message, setMessage] = React.useState<any>("");
   const [dataz, setDataz] = React.useState<any>([]);
   const [userdata, setUserdata] = React.useState<any>([]);
-  const [idChatFriend, setIdChatFriend] = React.useState<any>([]);
 
   const isLogged = useAuthStore((state: any) => state.isLogged);
   const dataStore = useAuthStore((state: any) => state);
   const authIdFriend = useAuthStore((state: any) => state.authIdFriend);
 
-  // const {
-  //   register,
-  //   handleSubmit,
-  //   reset,
-  //   formState: { errors },
-  // } = useForm();
-
+ 
   const allUserExceptMe = userdata.filter(
     (user: any) => user.id !== dataStore.id
   );
@@ -71,10 +61,7 @@ function App() {
     }
   }, [roomId]);
 
-  // console.log(roomId)
-  // console.log(roomFilter)
 
- 
   
   const goDown = () => {
     messageEndRef.current?.scrollIntoView()
@@ -142,7 +129,6 @@ function App() {
           console.log('Change received!', payload)
           getMessages();
           goDown();
-          // console.log(pay:oad);
         }
       )
       .subscribe();
@@ -173,7 +159,7 @@ function App() {
               
                   <div
                     className="user-chat overflow-hidden"
-                    // style={{ width: "100vh" }}
+                    style={{ height: "99vh" }}
                   >
                     <div className="chat-content d-lg-flex">
                       <div className="w-100 overflow-hidden position-relative">

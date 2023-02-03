@@ -11,6 +11,7 @@ const useAuthStore = create(
       lastname: null,
       avatar: "",
       idFriend: "",
+      status: "",
 
       // methods for manipulating state
       authLogin: (
@@ -20,6 +21,7 @@ const useAuthStore = create(
         lastname: string,
         avatar: string,
         idFriend: string,
+        status: string,
       ) =>
         set((state: any) => ({
           isLogged: status_logged,
@@ -28,6 +30,7 @@ const useAuthStore = create(
           lastname: lastname,
           avatar: avatar,
           idFriend: idFriend,
+          status: status,
         })),
       authUserId: (
         id: string,
@@ -53,6 +56,7 @@ const useAuthStore = create(
           lastname: null,
           avatar: null,
           idFriend: "",
+          status: "",
         })),
     }),
     {
